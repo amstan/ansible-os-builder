@@ -21,7 +21,7 @@ alarm setup for my [guitar](https://hypertriangle.com/~alex/guitar/), or
 pikaur -S ansible qemu-user-static binfmt-qemu-static arch-install-scripts
 ```
 
-### Debian / glinux
+### Debian
 
 ```bash
 sudo apt-get install ansible qemu-user-static arch-install-scripts arch-install-scripts
@@ -49,19 +49,3 @@ Some tags of interest:
   (add as the first task in the arguments) to add the "chroot" host to the ram
   based inventory so other tasks can operate on it.
 * `update` - various updates: arch packages
-
-## GPG Checking
-
-These `chroot_aquire` tasks will check validity of the archlinuxarm archive
-(that it can only download over http) using GPG. The signature accepted is
-stored, checked in this folder, as `archlinuxarm.gpg`.
-
-To verify it, compare `gpg archlinuxarm.gpg` output with
-https://archlinuxarm.org/about/package-signing:
-
-	% gpg archlinuxarm.gpg
-	gpg: WARNING: no command supplied.  Trying to guess what you mean ...
-	pub   rsa4096 2014-01-18 [SC]
-	68B3537F39A313B3E574D06777193F152BDBE6A6
-	uid           Arch Linux ARM Build System <builder@archlinuxarm.org>
-	sub   rsa4096 2014-01-18 [E]
