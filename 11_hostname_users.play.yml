@@ -8,6 +8,7 @@
       # not ansible.builtin.hostname, since the systemd way will escape the chroot
       ansible.builtin.lineinfile:
         path: /etc/hostname
+        create: true
         regexp: '.*'
         line: '{{hostname}}'
       tags: hostname

@@ -1,47 +1,79 @@
-- name: Create Arch Linux ARM rootfs chroot
+- name: Create Arch Linux rootfs chroot
   hosts: localhost
   vars:
     ansible_become: yes
-    rootfs: 'ArchLinuxARM-armv7-latest' # variant that alarm calls its tar gz
     build_dir: '{{playbook_dir}}/build'
     chroot_dir: '{{build_dir}}/chroot'
+    DEFAULT_ROOTFS_URL: 'http://os.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz'
+    # -e rootfs_url=https://archriscv.felixc.at/images/archriscv-latest.tar.zst -e skip_signature=true
+    # -e rootfs_url=https://mirror.csclub.uwaterloo.ca/archlinux/iso/latest/archlinux-bootstrap-x86_64.tar.zst
+    rootfs_url_: '{{ rootfs_url | default(DEFAULT_ROOTFS_URL) }}'
   tags: chroot
 
   tasks:
-    - name: Download Arch Linux ARM
+    - name: 'Download Arch Linux from {{rootfs_url_}}'
       ansible.builtin.get_url:
-        url: 'http://os.archlinuxarm.org/os/{{rootfs}}.tar.gz'
-        checksum: 'md5:http://os.archlinuxarm.org/os/{{rootfs}}.tar.gz.md5'
-        dest: '{{build_dir}}/{{rootfs}}.tar.gz'
+        url: '{{rootfs_url_}}'
+        dest: '{{build_dir}}/'
+      register: download_original_rootfs
       tags: chroot_aquire
 
-    - name: Download Arch Linux ARM signature
+    - name: Download rootfs signature
       ansible.builtin.get_url:
-        url: 'http://os.archlinuxarm.org/os/{{rootfs}}.tar.gz.sig'
-        dest: '{{build_dir}}/{{rootfs}}.tar.gz.sig'
+        url: '{{rootfs_url_}}.sig'
+        dest: '{{build_dir}}'
+      register: download_signature
+      when: skip_signature is not defined
       tags: chroot_aquire
 
-    - name: Check GPG Signature of Arch Linux ARM
+    - name: Check GPG Signature of original downloaded rootfs
       ansible.builtin.shell:
         chdir: '{{build_dir}}'
         cmd: |
           gpg --import '{{playbook_dir}}/archlinuxarm.gpg' &&
-          gpg --verify '{{rootfs}}.tar.gz.sig' '{{rootfs}}.tar.gz'
+          gpg --import '{{playbook_dir}}/archlinux.gpg' &&
+          gpg --verify '{{download_signature.dest}}' '{{download_original_rootfs.dest}}'
+      when: skip_signature is not defined
       tags: chroot_aquire
 
-    - name: Creates Arch Linux ARM directory
+    - name: Create Arch Linux directory
       ansible.builtin.file:
         path: '{{chroot_dir}}'
         state: directory
       tags: chroot_aquire
 
-    - name: Extract Arch Linux ARM
+    - name: Extract Arch Linux
       ansible.builtin.unarchive:
         remote_src: yes
-        src: '{{build_dir}}/{{rootfs}}.tar.gz'
+        src: '{{download_original_rootfs.dest}}'
         dest: '{{chroot_dir}}'
         creates: '{{chroot_dir}}/var/log' # about the last thing from that archive
       tags: chroot_aquire
+
+    - name: Move Archlinux x86 to outer folder
+      ansible.builtin.shell:
+        chdir: '{{chroot_dir}}'
+        cmd: mv root.x86_64/* .
+        creates: 'bin/'
+        removes: 'root.x86_64/bin/'
+      tags: chroot_aquire
+
+    - name: Clean up x86 Archlinux
+      ansible.builtin.file:
+        path: '{{chroot_dir}}/{{item}}'
+        state: absent
+      with_items:
+        - root.x86_64/
+        - version
+        - pkglist.x86_64.txt
+      tags: chroot_aquire
+
+    - name: 'Enable {{rootfs_url_ | urlsplit("hostname")}} in mirrorlist'
+      ansible.builtin.replace:
+        dest: '{{chroot_dir}}/etc/pacman.d/mirrorlist'
+        regexp: '^#(.*{{rootfs_url_ | urlsplit("hostname")}}.*)$'
+        replace: '\1'
+      tags: chroot_aquire, mirrorlist
 
     - name: Bootstrap chroot (install python for ansible)
       ansible.builtin.shell:
@@ -49,11 +81,14 @@
         cmd: |
           './chroot.sh' {{chroot_dir}} bash -c '
             pacman-key --init;
-            pacman-key --populate archlinuxarm;
+            pacman-key --populate;
             pacman -Sy python --noconfirm
           '
         creates:
           '{{chroot_dir}}/usr/bin/python'
+        # If things around here fail, replace "-Sy" with "-Syu",
+        # since there's probably been a major change.
+        # It's not like that by default since it takes much longer to execute
       tags: chroot_aquire
 
     - name: Add chroot host to inventory
