@@ -93,8 +93,8 @@
 
     - name: Add chroot host to inventory
       ansible.builtin.add_host:
-        groups: archlinuxarm
-        name: archlinuxarm-chroot
+        groups: archlinux
+        name: archlinux-chroot
         ansible_connection: community.general.chroot
         ansible_host: '{{chroot_dir}}'
         ansible_chroot_exe: '{{playbook_dir}}/chroot.sh'
@@ -103,7 +103,7 @@
 
 
 - name: Installation of packages and things as root
-  hosts: archlinuxarm
+  hosts: archlinux
   vars:
     ansible_become: yes
 

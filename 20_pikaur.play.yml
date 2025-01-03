@@ -1,5 +1,5 @@
 - name: Pikaur Management
-  hosts: archlinuxarm
+  hosts: archlinux
   vars:
     ansible_become: yes
     ansible_become_user: '{{username}}'

@@ -1,7 +1,7 @@
 # Copy this file and pass it with -i to ansible-playbook
 # or append it to /etc/ansible/hosts
 
-archlinuxarm: # hosts targeted by alarm-ansible
+archlinux: # hosts targeted by alarm-ansible
   vars:
     username: your_alarm_username
     hostname: your_alarm_hostname
@@ -12,7 +12,7 @@ archlinuxarm: # hosts targeted by alarm-ansible
     ansible_ssh_private_key_file: '{{ssh_key}}'
 
   hosts:
-    # 'archlinuxarm-chroot:' host is dynamically added at the end of first playbook
+    # 'archlinux-chroot:' host is dynamically added at the end of first playbook
 
     # In theory this project can be used without any inventory in this section
     # but if you want to provision over ssh you can do it by uncommenting

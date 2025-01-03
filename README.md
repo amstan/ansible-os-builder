@@ -1,6 +1,6 @@
-# Arch Linux ARM Ansible Scripts
+# Arch Linux Builder Ansible Scripts
 
-I always wanted to be able to customize and add to Arch Linux ARM embedded installs.
+I always wanted to be able to customize and add to Arch Linux embedded installs.
 
 The goal here is to have a set of playbooks that generates an SD card that's
 supposed to boot and already be usable for a particular application (ex: the
@@ -11,7 +11,7 @@ alarm setup for my [guitar](https://hypertriangle.com/~alex/guitar/), or
 
 * [Ansible](https://docs.ansible.com/ansible/latest/)
 * qemu-user-static in order to
-  [chroot from x86 into an arm system](https://wiki.archlinux.org/title/QEMU#Chrooting_into_arm/arm64_environment_from_x86_64).
+  [chroot from x86 into an arm/risc-v system](https://wiki.archlinux.org/title/QEMU#Chrooting_into_arm/arm64_environment_from_x86_64).
 * [arch-chroot](https://man.archlinux.org/man/arch-chroot.8) in $PATH from
   package [arch-install-scripts](https://archlinux.org/packages/extra/any/arch-install-scripts/).
 
@@ -33,7 +33,7 @@ Define your inventory (at least for the machine settings), see
 inventory_template.yml for more details on how or where to put them.
 
 ```bash
-alarm/ansible% sudo ansible-playbook -i inventory.yml *.play*.yml -v
+alarm-ansible% sudo ansible-playbook -i inventory.yml *.play*.yml -v
 ```
 
 ### Tags

@@ -1,5 +1,5 @@
 - name: Configuration of amstan things (zsh and a bunch of other .files)
-  hosts: archlinuxarm
+  hosts: archlinux
   tags: user_amstan
 
   tasks:

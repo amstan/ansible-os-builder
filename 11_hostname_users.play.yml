@@ -1,5 +1,5 @@
 - name: Configuration of users and hosts
-  hosts: archlinuxarm
+  hosts: archlinux
   vars:
     ansible_become: yes
 
@@ -27,7 +27,7 @@
       register: authorized_keys
       tags: user
 
-    - name: Remove the alarm default user
+    - name: Remove Arch Linux ARM default user
       when: authorized_keys['state'] == 'present'
       ansible.builtin.user:
         name: alarm
