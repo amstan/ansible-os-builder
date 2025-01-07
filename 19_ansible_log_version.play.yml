@@ -1,0 +1,25 @@
+- name: Figure out ansible run version
+  hosts: localhost
+  tags: update, version, image
+  tasks:
+    - name: get date and git describe
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}'
+        cmd: |
+          echo {{ '%Y-%m-%dT%H_%M_%SZ' | strftime(ansible_date_time.epoch, utc=True) }}-$(git describe --tags --long --dirty)
+      register: version
+
+- name: Note down this ansible incantation in a logfile on the device
+  hosts: archlinux
+  vars:
+    ansible_become: yes
+  tags: update, version
+  tasks:
+    - name: /var/log/alarm-ansible
+      ansible.builtin.lineinfile:
+        path: /var/log/alarm-ansible
+        create: yes
+        line: >-
+          {{hostvars['localhost']['version'].stdout}}
+          tags={{ansible_run_tags}}
+          skip-tags={{ansible_skip_tags}}
