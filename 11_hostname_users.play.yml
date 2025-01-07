@@ -13,6 +13,18 @@
         line: '{{hostname}}'
       tags: hostname
 
+    - name: Set timezone to UTC
+      ansible.builtin.file:
+          src: /usr/share/zoneinfo/UTC
+          dest: /etc/localtime
+          state: link
+
+    - name: root password root
+      ansible.builtin.user:
+        name: root
+        password: $6$HNlif6QMOj3xDzLB$i.qeh2i4Jn5oVMVZjxPS.1aeCkc6gK1q0IH6hrbMDhDyn2OSOfJ.bsOwR2qOyCo55CWyQ8KGBkgi9.5zEJziL/
+        # echo "root" | mkpasswd --method=sha-512 -s
+
     - name: Create main user
       ansible.builtin.user:
         user: '{{username}}'
