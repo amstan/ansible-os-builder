@@ -183,3 +183,15 @@
           dest: /etc/makepkg.conf
           regexp: "^PKGEXT='.pkg.tar"
           line: "PKGEXT='.pkg.tar'"
+
+    - ansible.builtin.file:
+        path: /etc/systemd/system/getty@.service.d/
+        state: directory
+
+    - name: No clear screen getty in systemd
+      # Fun blog post article I relate with: https://mywiki.wooledge.org/SystemdNoClear
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/getty@.service.d/noclear.conf
+        content: |
+          [Service]
+          TTYVTDisallocate=no
