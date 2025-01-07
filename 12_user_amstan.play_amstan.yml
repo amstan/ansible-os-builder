@@ -15,14 +15,20 @@
         user: '{{username}}'
         shell: /bin/zsh
 
+    - name: Clone .configs
+      vars:
+        ansible_become_user: '{{username}}'
+      ansible.builtin.git:
+        repo: 'https://github.com/amstan/configs.git'
+        dest: '/home/{{username}}/.configs/'
+
     - name: Install .configs
       vars:
         ansible_become_user: '{{username}}'
       ansible.builtin.shell:
         chdir: '/home/{{username}}'
         cmd: |
-          git clone https://github.com/amstan/configs.git .configs
           for i in .{gitconfig,gitignore,pystartup,zshrc}; do
-            ln -s ~/.configs/$i ~/$i
+            ln -sf .configs/$i $i
           done
         creates: '/home/{{username}}/.zshrc'
