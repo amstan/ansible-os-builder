@@ -1,0 +1,24 @@
+- name: Install x86 things
+  hosts: archlinux
+  vars:
+    ansible_become: yes
+  tags: x86
+
+  tasks:
+    - name: Install boot packages
+      community.general.pacman:
+        package:
+          - linux
+          - grub
+          - memtest86+-efi
+          - amd-ucode
+          - intel-ucode
+          - linux-firmware
+        state: present
+      tags: install, kernel, grub
+
+    - name: Kernel cmdline
+      ansible.builtin.lineinfile:
+        dest: /etc/default/grub
+        regexp: '^GRUB_CMDLINE_LINUX_DEFAULT'
+        line: 'GRUB_CMDLINE_LINUX_DEFAULT="loglevel=9 audit=0 console=tty0"'

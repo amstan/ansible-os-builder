@@ -1,0 +1,157 @@
+- name: Install x86 rootfs from chroot to image
+  hosts: localhost
+  vars:
+    ansible_become: yes
+    chroot_dir: '{{playbook_dir}}/build/chroot'
+    mnt_img: "{{playbook_dir}}/build/x86_{{hostvars['localhost']['version'].stdout}}.img"
+    btrfs_snapshot: "x86_{{hostvars['localhost']['version'].stdout}}"
+    root_name: "rw_{{ btrfs_snapshot }}"
+  tags: x86_image, image
+
+  tasks:
+    - name: Make sure things are unmounted
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build'
+        cmd: |
+          umount -Rl mnt
+          umount -Rl mnt/*/boot
+          # always successful no matter what
+          exit 0
+
+    - name: Allocate img file
+      ansible.builtin.shell: |
+        dd if=/dev/zero of={{ mnt_img }} bs=1M count=10000
+
+    - name: Create /boot partition
+      community.general.parted:
+        device: '{{ mnt_img }}'
+        label: 'gpt'
+        number: 1
+        fs_type: fat32
+        flags: [ boot, esp ]
+        part_end: 1000MB
+        state: present
+
+    - name: Create rootfs partition
+      community.general.parted:
+        device: '{{ mnt_img }}'
+        label: 'gpt'
+        number: 2
+        fs_type: btrfs
+        part_start: 1000MB
+        state: present
+
+    - name: losetup
+      ansible.builtin.shell: |
+        losetup -fP --show {{ mnt_img }}
+      register: losetup
+
+    - name: Format /boot filesystem
+      community.general.filesystem:
+        dev: '{{losetup.stdout}}p1'
+        fstype: vfat
+        opts: -F 32 -n ARCHBOOT
+        state: present
+
+    - name: Format rootfs filesystem
+      community.general.filesystem:
+        dev: '{{losetup.stdout}}p2'
+        fstype: btrfs
+        opts: -L archlinux_fs
+        state: present
+
+    - name: Create fs dir structure and mount everything in its proper spot
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build'
+        cmd: |
+          mkdir -p mnt &&
+          mount {{losetup.stdout}}p2 -o subvol=/ mnt &&
+          btrfs subvolume create mnt/{{ root_name }} &&
+          btrfs subvolume set-default mnt/{{ root_name }} &&
+          mkdir -p mnt/{{ root_name }}/mnt/fs &&
+          mkdir -p mnt/{{ root_name }}/boot &&
+          mount -o bind mnt/{{ root_name }}/ mnt/{{ root_name }}/ &&
+          mount {{losetup.stdout}}p1 mnt/{{ root_name }}/boot
+
+    - name: Cleanup chroot source before copying
+      # Less stuff to copy
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build'
+        cmd: |
+          umount -R chroot
+          rm -Rf chroot/var/cache/pacman/pkg/*
+          rm -Rf chroot/home/*/.cache/*
+      tags: cleanup
+
+    - name: Rsync rootfs from chroot to mnt/ image
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build'
+        cmd: |
+          rsync --archive --hard-links --acls --xattrs --sparse -recursive chroot/* mnt/{{ root_name }}/
+          sync
+      tags: copy
+
+    - name: Add img chroot to inventory
+      # Because grub really refuses to do anything without touching the
+      # partitions we cannot just do stuff way before this point, we actually have
+      # to do grub_install in a new chroot while mounted via losetup
+      ansible.builtin.add_host:
+        groups: archlinux
+        name: archlinux-img-chroot
+        ansible_connection: community.general.chroot
+        ansible_host: '{{playbook_dir}}/build/mnt/{{ root_name }}/'
+        ansible_chroot_exe: 'arch-chroot'
+        ansible_python_interpreter: '/usr/bin/python'
+      tags: chroot_img_inventory
+
+    - name: grub-install
+      delegate_to: archlinux-img-chroot
+      ansible.builtin.shell: |
+        grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id="boot" --removable
+
+    - name: grub-mkconfig
+      delegate_to: archlinux-img-chroot
+      ansible.builtin.shell: |
+        grub-mkconfig -o /boot/grub/grub.cfg
+
+    # - name: TODO: fstab
+    # Maybe this should be done dynamically with systemd
+    # a simple `sudo systemctl restart boot.mount` should make it work if it doesn't already
+
+    - name: Snapshot root
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build/mnt'
+        cmd: |
+          btrfs subvolume snapshot -r {{ root_name }} {{ btrfs_snapshot }}
+
+    - name: Save snapshot as discrete file
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build/mnt'
+        cmd: |
+          btrfs send {{ btrfs_snapshot }} | zstd -c > {{playbook_dir}}/build/{{ btrfs_snapshot }}.btrfs.zst
+
+    - name: Unmount partitions
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build'
+        cmd: |
+          umount -Rl mnt/*/boot
+          umount -Rl mnt
+      tags: cleanup
+
+    - name: Cleanup losetup
+      ansible.builtin.shell: |
+        losetup -d {{losetup.stdout}}
+      tags: cleanup
+
+    - name: Compress image
+      ansible.builtin.shell:
+        chdir: '{{playbook_dir}}/build'
+        cmd: |
+         tar --zstd -cf "{{ mnt_img }}.tar.zst" "{{ mnt_img }}"
+      tags: compress
+
+# After booting:
+#   resize rootfs partition to max
+#       `sudo parted /dev/nvme0n1 resizepart` `Fix` `2` `100%`
+#       `sudo parted /dev/nvme0n1 resizepart`
+#   sudo btrfs filesystem resize max /
