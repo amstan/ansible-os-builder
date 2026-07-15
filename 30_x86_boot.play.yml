@@ -1,5 +1,5 @@
 - name: Install x86 things
-  hosts: os-builder-targets
+  hosts: os_builder_targets
   tags: x86
 
   tasks:

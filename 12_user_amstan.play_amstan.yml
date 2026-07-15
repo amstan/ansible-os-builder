@@ -1,5 +1,5 @@
 - name: Configuration of amstan things (zsh and a bunch of other .files)
-  hosts: os-builder-targets
+  hosts: os_builder_targets
   tags: user_amstan
 
   tasks:

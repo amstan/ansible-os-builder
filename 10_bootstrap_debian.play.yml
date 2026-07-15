@@ -1,5 +1,5 @@
 - name: Create Debian rootfs chroot
-  hosts: os-builder
+  hosts: os_builder
   vars:
     build_dir: '{{playbook_dir}}/build'
     chroot_dir: '{{build_dir}}/chroot'
@@ -39,8 +39,8 @@
 
     - name: Add chroot host to inventory
       ansible.builtin.add_host:
-        groups: os-builder-targets
-        name: os-builder-debian-chroot
+        groups: os_builder_targets
+        name: os_builder_debian_chroot
         ansible_connection: community.general.chroot
         ansible_host: '{{chroot_dir}}'
         ansible_chroot_exe: '{{playbook_dir}}/chroot.sh'
@@ -50,7 +50,7 @@
 
 
 - name: Installation of packages and things as root
-  hosts: os-builder-targets
+  hosts: os_builder_targets
 
   tasks:
     - name: Update packages

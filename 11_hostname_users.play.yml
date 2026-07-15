@@ -1,5 +1,5 @@
 - name: Configuration of users and hosts
-  hosts: os-builder-targets
+  hosts: os_builder_targets
 
   tasks:
     - name: Set hostname

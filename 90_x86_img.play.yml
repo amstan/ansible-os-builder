@@ -1,9 +1,9 @@
 - name: Install x86 rootfs from chroot to image
-  hosts: os-builder
+  hosts: os_builder
   vars:
     chroot_dir: '{{playbook_dir}}/build/chroot'
-    mnt_img: "{{playbook_dir}}/build/x86_{{hostvars['os-builder']['version'].stdout}}.img"
-    btrfs_snapshot: "x86_{{hostvars['os-builder']['version'].stdout}}"
+    mnt_img: "{{playbook_dir}}/build/x86_{{hostvars['os_builder']['version'].stdout}}.img"
+    btrfs_snapshot: "x86_{{hostvars['os_builder']['version'].stdout}}"
     root_name: "rw_{{ btrfs_snapshot }}"
   tags: x86_image, image
 
@@ -97,7 +97,7 @@
       # to do grub_install in a new chroot while mounted via losetup
       ansible.builtin.add_host:
         groups: targets
-        name: os-builder-img-chroot
+        name: os_builder_img_chroot
         ansible_connection: community.general.chroot
         ansible_host: '{{playbook_dir}}/build/mnt/{{ root_name }}/'
         ansible_chroot_exe: 'arch-chroot'
@@ -106,13 +106,13 @@
       tags: chroot_img_inventory
 
     - name: grub-install
-      delegate_to: os-builder-img-chroot
+      delegate_to: os_builder_img_chroot
       ansible.builtin.shell: |
         sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id="boot" --removable
       # use sudo so on the occasional chance grub-install is in /usr/sbin it'll find it
 
     - name: grub-mkconfig
-      delegate_to: os-builder-img-chroot
+      delegate_to: os_builder_img_chroot
       ansible.builtin.shell: |
         sudo grub-mkconfig -o /boot/grub/grub.cfg
 

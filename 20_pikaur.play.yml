@@ -1,5 +1,5 @@
 - name: Pikaur Management
-  hosts: os-builder-targets
+  hosts: os_builder_targets
   vars:
     ansible_become_user: '{{username}}'
     build_dir: '/home/{{username}}/.cache/pikaur/build/pikaur' # this can't be /tmp because in a chroot it won't remember between tasks
