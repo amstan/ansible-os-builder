@@ -1,7 +1,5 @@
 - name: Configuration of users and hosts
-  hosts: archlinux
-  vars:
-    ansible_become: yes
+  hosts: os-builder-targets
 
   tasks:
     - name: Set hostname
@@ -31,7 +29,7 @@
         groups: wheel, uucp, video
       tags: user
 
-    - name: Install authorized_key from localhost
+    - name: Install authorized_key from builder
       ansible.posix.authorized_key:
         user: '{{username}}'
         key: "{{ lookup('file', ssh_key_pub) }}"

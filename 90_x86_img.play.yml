@@ -1,10 +1,9 @@
 - name: Install x86 rootfs from chroot to image
-  hosts: localhost
+  hosts: os-builder
   vars:
-    ansible_become: yes
     chroot_dir: '{{playbook_dir}}/build/chroot'
-    mnt_img: "{{playbook_dir}}/build/x86_{{hostvars['localhost']['version'].stdout}}.img"
-    btrfs_snapshot: "x86_{{hostvars['localhost']['version'].stdout}}"
+    mnt_img: "{{playbook_dir}}/build/x86_{{hostvars['os-builder']['version'].stdout}}.img"
+    btrfs_snapshot: "x86_{{hostvars['os-builder']['version'].stdout}}"
     root_name: "rw_{{ btrfs_snapshot }}"
   tags: x86_image, image
 
@@ -50,14 +49,14 @@
       community.general.filesystem:
         dev: '{{losetup.stdout}}p1'
         fstype: vfat
-        opts: -F 32 -n ARCHBOOT
+        opts: -F 32 -n BOOT
         state: present
 
     - name: Format rootfs filesystem
       community.general.filesystem:
         dev: '{{losetup.stdout}}p2'
         fstype: btrfs
-        opts: -L archlinux_fs
+        opts: -L rootfs
         state: present
 
     - name: Create fs dir structure and mount everything in its proper spot
@@ -96,21 +95,22 @@
       # partitions we cannot just do stuff way before this point, we actually have
       # to do grub_install in a new chroot while mounted via losetup
       ansible.builtin.add_host:
-        groups: archlinux
-        name: archlinux-img-chroot
+        groups: targets
+        name: os-builder-img-chroot
         ansible_connection: community.general.chroot
         ansible_host: '{{playbook_dir}}/build/mnt/{{ root_name }}/'
         ansible_chroot_exe: 'arch-chroot'
+        ansible_become: yes
         ansible_python_interpreter: '/usr/bin/python'
       tags: chroot_img_inventory
 
     - name: grub-install
-      delegate_to: archlinux-img-chroot
+      delegate_to: os-builder-img-chroot
       ansible.builtin.shell: |
         grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id="boot" --removable
 
     - name: grub-mkconfig
-      delegate_to: archlinux-img-chroot
+      delegate_to: os-builder-img-chroot
       ansible.builtin.shell: |
         grub-mkconfig -o /boot/grub/grub.cfg
 

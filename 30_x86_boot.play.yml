@@ -1,7 +1,5 @@
 - name: Install x86 things
-  hosts: archlinux
-  vars:
-    ansible_become: yes
+  hosts: os-builder-targets
   tags: x86
 
   tasks:

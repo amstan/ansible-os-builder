@@ -1,15 +1,25 @@
 # Copy this file and pass it with -i to ansible-playbook
 # or append it to /etc/ansible/hosts
 
-archlinux: # hosts targeted by ansible-os-builder
+all:
   vars:
-    username: your_target_username
-    hostname: your_target_hostname
-
-    host_username: your_host_username
-    ssh_key:     '/home/{{host_username}}/.ssh/id_rsa'
-    ssh_key_pub: '{{ssh_key}}.pub'
-    ansible_ssh_private_key_file: '{{ssh_key}}'
+    ansible_python_interpreter: '/usr/bin/python'
 
   hosts:
-    # 'archlinux-chroot:' host is dynamically added at the end of first playbook
+    os-builder:
+      ansible_become: yes
+      ansible_connection: local
+
+  children:
+    os-builder-targets: # hosts targeted by ansible-os-builder
+      vars:
+        username: your_target_username
+        hostname: your_target_hostname
+
+        host_username: your_host_username
+        ssh_key:     '/home/{{host_username}}/.ssh/id_rsa'
+        ssh_key_pub: '{{ssh_key}}.pub'
+        ansible_ssh_private_key_file: '{{ssh_key}}'
+
+      hosts:
+        # 'archlinux-chroot:' host is dynamically added at the end of first playbook

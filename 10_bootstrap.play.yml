@@ -1,7 +1,6 @@
 - name: Create Arch Linux rootfs chroot
-  hosts: localhost
+  hosts: os-builder
   vars:
-    ansible_become: yes
     build_dir: '{{playbook_dir}}/build'
     chroot_dir: '{{build_dir}}/chroot'
     DEFAULT_ROOTFS_URL: 'http://os.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz'
@@ -93,19 +92,18 @@
 
     - name: Add chroot host to inventory
       ansible.builtin.add_host:
-        groups: archlinux
-        name: archlinux-chroot
+        groups: os-builder-targets
+        name: os-builder-archlinux-chroot
         ansible_connection: community.general.chroot
         ansible_host: '{{chroot_dir}}'
         ansible_chroot_exe: '{{playbook_dir}}/chroot.sh'
+        ansible_become: yes
         ansible_python_interpreter: '/usr/bin/python'
       tags: chroot_inventory
 
 
 - name: Installation of packages and things as root
-  hosts: archlinux
-  vars:
-    ansible_become: yes
+  hosts: os-builder-targets
 
   tasks:
     - name: Enable pacman.conf ParallelDownloads
