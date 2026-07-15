@@ -1,0 +1,71 @@
+- name: Create Fedora rootfs chroot
+  hosts: localhost
+  vars:
+    ansible_become: yes
+    build_dir: '{{playbook_dir}}/build'
+    chroot_dir: '{{build_dir}}/chroot'
+    fedora_release: 43
+    fedora_host_gpg_keys: "file:///usr/share/distribution-gpg-keys/fedora/RPM-GPG-KEY-fedora-{{ fedora_release }}-primary"
+  tags: chroot
+
+  tasks:
+    - name: Install host archlinux tools for fedora bootstrapping
+      community.general.pacman:
+        package:
+          - arch-install-scripts
+          - dnf5
+          - distribution-gpg-keys
+
+    - name: "Create {{ chroot_dir }}"
+      ansible.builtin.file:
+        path: "{{ chroot_dir }}"
+        state: directory
+
+    - name: Create temporary fedora.repo
+      ansible.builtin.copy:
+        dest: '{{ build_dir }}/fedora.repo'
+        content: |
+          [fedora]
+          name=Fedora $releasever - $basearch
+          metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-$releasever&arch=$basearch
+          enabled=1
+          countme=1
+          metadata_expire=7d
+          repo_gpgcheck=0
+          type=rpm
+          gpgcheck=1
+          gpgkey={{ fedora_host_gpg_keys }}
+          skip_if_unavailable=False
+
+    - name: "Bootstrap Fedora {{ fedora_release }}"
+      ansible.builtin.shell: |
+        dnf5 -y --repo=fedora --releasever={{ fedora_release }} --setopt=reposdir={{ build_dir }} --installroot={{ chroot_dir }} install fedora-gpg-keys fedora-repos bash dnf5 python python3-dnf python3-libdnf5
+
+    # - name: touch /etc/resolv.conf, so arch-chroot can link it later
+    #   # See https://gitlab.archlinux.org/archlinux/arch-install-scripts/-/blob/master/arch-chroot.in?ref_type=heads#L60
+    #   # Somehow this is not needed anymore since some packages above create an /etc/resolv.conf
+    #   ansible.builtin.file:
+    #     path: "{{ chroot_dir }}/etc/resolv.conf"
+    #     state: touch
+
+    - name: Add chroot host to inventory
+      ansible.builtin.add_host:
+        groups: archlinux
+        name: archlinux-chroot
+        ansible_connection: community.general.chroot
+        ansible_host: '{{chroot_dir}}'
+        ansible_chroot_exe: '{{playbook_dir}}/chroot.sh'
+        ansible_python_interpreter: '/usr/bin/python'
+      tags: chroot_inventory
+
+- name: Installation of packages and things as root
+  hosts: archlinux
+  vars:
+    ansible_become: yes
+
+  tasks:
+    - name: Update packages
+      ansible.builtin.dnf5:
+        name: "*"
+        state: latest
+
