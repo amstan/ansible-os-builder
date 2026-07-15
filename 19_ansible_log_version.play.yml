@@ -15,9 +15,9 @@
     ansible_become: yes
   tags: update, version
   tasks:
-    - name: /var/log/alarm-ansible
+    - name: /var/log/ansible-os-image-builder
       ansible.builtin.lineinfile:
-        path: /var/log/alarm-ansible
+        path: /var/log/ansible-os-image-builder
         create: yes
         line: >-
           {{hostvars['localhost']['version'].stdout}}
