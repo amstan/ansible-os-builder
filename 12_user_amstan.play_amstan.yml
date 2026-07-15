@@ -25,10 +25,13 @@
     - name: Install .configs
       vars:
         ansible_become_user: '{{username}}'
-      ansible.builtin.shell:
-        chdir: '/home/{{username}}'
-        cmd: |
-          for i in .{gitconfig,gitignore,pystartup,zshrc}; do
-            ln -sf .configs/$i $i
-          done
-        creates: '/home/{{username}}/.zshrc'
+      ansible.builtin.file:
+        src: ".configs/{{item}}"
+        dest: "/home/{{username}}/{{item}}"
+        state: link
+        owner: "{{username}}"
+      loop:
+        - .gitconfig
+        - .gitignore
+        - .pystartup
+        - .zshrc
