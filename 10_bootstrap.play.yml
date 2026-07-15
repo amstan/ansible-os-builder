@@ -140,6 +140,7 @@
     - name: Install aux tool packages
       community.general.pacman:
         package:
+          - inetutils
           - lshw
           - usbutils # lsusb is here
           - htop
@@ -147,6 +148,9 @@
           - man
           - stress
           - screen
+          - strace
+          - rsync
+          - bc
         state: present
       tags: install
 
