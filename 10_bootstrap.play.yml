@@ -99,6 +99,7 @@
         ansible_chroot_exe: '{{playbook_dir}}/chroot.sh'
         ansible_become: yes
         ansible_python_interpreter: '/usr/bin/python'
+        gather_facts: no
       tags: chroot_inventory
 
 

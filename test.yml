@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  gather_facts: no
+  tasks:
+
+  - debug:
+      var: hostvars[inventory_hostname]
+
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+
+  - debug:
+      var: hostvars[inventory_hostname]

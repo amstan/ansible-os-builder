@@ -102,6 +102,7 @@
         ansible_chroot_exe: 'arch-chroot'
         ansible_become: yes
         ansible_python_interpreter: '/usr/bin/python'
+        gather_facts: no
       tags: chroot_img_inventory
 
     - name: grub-install

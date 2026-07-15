@@ -7,6 +7,7 @@ all:
 
   hosts:
     os-builder:
+      gather_facts: no
       ansible_become: yes
       ansible_connection: local
 
