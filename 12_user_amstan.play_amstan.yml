@@ -1,6 +1,8 @@
 - name: Configuration of amstan things (zsh and a bunch of other .files)
   hosts: archlinux
   tags: user_amstan
+  vars:
+    ansible_become: yes
 
   tasks:
     - name: Install zsh
