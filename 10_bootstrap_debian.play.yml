@@ -1,0 +1,141 @@
+- name: Create Debian rootfs chroot
+  hosts: os-builder
+  vars:
+    build_dir: '{{playbook_dir}}/build'
+    chroot_dir: '{{build_dir}}/chroot'
+    rootfs_url_: '{{ rootfs_url | default(DEFAULT_ROOTFS_URL) }}'
+  tags: chroot
+
+  tasks:
+    - name: Create chroot directory
+      ansible.builtin.file:
+        path: '{{chroot_dir}}'
+        state: directory
+      tags: chroot_aquire
+
+    - name: Debootstrapping...
+      ansible.builtin.shell:
+        chdir: '{{chroot_dir}}'
+        cmd: |
+            debootstrap --components=main,contrib,non-free,non-free-firmware --include=python3,python-is-python3,sudo --variant=minbase sid {{chroot_dir}} http://deb.debian.org/debian/
+        creates: '{{chroot_dir}}/etc/nsswitch.conf' # about the last thing, see later asserts
+      tags: chroot_aquire
+
+    - name: Check some file locations in preparation for asserts
+      ansible.builtin.stat:
+        path: "{{item}}"
+      loop:
+        - "{{chroot_dir}}/etc/nsswitch.conf"
+        - "{{chroot_dir}}/debootstrap"
+      register: path_stats
+
+    - name: Assert that the debootstrap finished successfully
+      vars:
+        stats: "{{ path_stats.results | items2dict(key_name='item', value_name='stat') }}"
+      ansible.builtin.assert:
+        that:
+          - stats[chroot_dir ~ '/etc/nsswitch.conf'].exists # libc-bin was configured
+          - not stats[chroot_dir ~ '/debootstrap'].exists # it means the debootstrap did not finish or was done twice
+
+    - name: Add chroot host to inventory
+      ansible.builtin.add_host:
+        groups: os-builder-targets
+        name: os-builder-debian-chroot
+        ansible_connection: community.general.chroot
+        ansible_host: '{{chroot_dir}}'
+        ansible_chroot_exe: '{{playbook_dir}}/chroot.sh'
+        ansible_become: yes
+        ansible_python_interpreter: '/usr/bin/python'
+      tags: chroot_inventory
+
+
+- name: Installation of packages and things as root
+  hosts: os-builder-targets
+
+  tasks:
+    - name: Update packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+      tags: update
+
+    - name: Install more "base" packages
+      ansible.builtin.apt:
+        package:
+          - sudo
+          - git
+          - build-essential
+          - vim
+          - nano
+          - network-manager
+          - openssh-server
+          - openssh-client
+          - btrfs-progs
+          - arch-install-scripts
+          - python3-setuptools
+          - python3-pip
+        state: present
+      tags: install
+
+    - name: Install aux tool packages
+      ansible.builtin.apt:
+        package:
+          - lshw
+          - usbutils # lsusb is here
+          - htop
+          - wget
+          - man
+          - stress
+          - screen
+          - strace
+          - rsync
+          - bc
+        state: present
+      tags: install
+    #
+    - name: Make wheel sudoers with NOPASSWD
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/99-nopasswd-admin
+        content: |
+          User_Alias ADMIN_GROUPS = %sudo, %wheel
+          ADMIN_GROUPS ALL=(ALL:ALL) NOPASSWD: ALL
+        validate: /usr/sbin/visudo -cf %s
+      tags: provision
+
+    - name: Enable and start NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager
+        enabled: yes
+      tags: provision
+
+    - name: print-ip NetworkManager hook
+      ansible.builtin.copy:
+        src: '{{playbook_dir}}/files/90.print-ip.sh'
+        dest: /etc/NetworkManager/dispatcher.d/90.print-ip.sh
+        mode: '0755'
+      tags: provision
+
+    - name: Enable and start sshd
+      ansible.builtin.systemd:
+        name: ssh
+        enabled: yes
+      tags: provision
+
+    - ansible.builtin.file:
+        path: /etc/systemd/system/getty@.service.d/
+        state: directory
+
+    - name: No clear screen getty in systemd
+      # Fun blog post article I relate with: https://mywiki.wooledge.org/SystemdNoClear
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/getty@.service.d/noclear.conf
+        content: |
+          [Service]
+          TTYVTDisallocate=no
+
+    - name: Add sbin directories to the non-root PATH in /etc/profile
+      # Allows things like grub-install to be called from ansible
+      ansible.builtin.replace:
+        path: /etc/profile
+        regexp: '^(\s*)PATH=.*games.*'
+        replace: '\1PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games"'

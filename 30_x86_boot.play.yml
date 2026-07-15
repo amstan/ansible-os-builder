@@ -16,6 +16,19 @@
       when: ansible_facts['pkg_mgr'] == "pacman"
       tags: install, kernel, grub
 
+    - name: Install boot packages for Debian
+      ansible.builtin.apt:
+        package:
+          - linux-image-amd64
+          - grub-efi-amd64
+          - memtest86+
+          - amd64-microcode
+          - intel-microcode
+          - firmware-linux
+        state: present
+      when: ansible_facts['pkg_mgr'] == "apt"
+      tags: install, kernel, grub
+
     - name: Kernel cmdline
       ansible.builtin.lineinfile:
         dest: /etc/default/grub

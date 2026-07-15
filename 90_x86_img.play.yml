@@ -79,6 +79,7 @@
         cmd: |
           umount -R chroot
           rm -Rf chroot/var/cache/pacman/pkg/*
+          rm -Rf chroot/var/cache/apt/*
           rm -Rf chroot/home/*/.cache/*
       tags: cleanup
 
