@@ -35,7 +35,7 @@
       when: skip_signature is not defined
       tags: chroot_aquire
 
-    - name: Create Arch Linux directory
+    - name: Create chroot directory
       ansible.builtin.file:
         path: '{{chroot_dir}}'
         state: directory

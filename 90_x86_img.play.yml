@@ -107,12 +107,13 @@
     - name: grub-install
       delegate_to: os-builder-img-chroot
       ansible.builtin.shell: |
-        grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id="boot" --removable
+        sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id="boot" --removable
+      # use sudo so on the occasional chance grub-install is in /usr/sbin it'll find it
 
     - name: grub-mkconfig
       delegate_to: os-builder-img-chroot
       ansible.builtin.shell: |
-        grub-mkconfig -o /boot/grub/grub.cfg
+        sudo grub-mkconfig -o /boot/grub/grub.cfg
 
     # - name: TODO: fstab
     # Maybe this should be done dynamically with systemd

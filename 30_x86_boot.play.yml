@@ -3,7 +3,7 @@
   tags: x86
 
   tasks:
-    - name: Install boot packages
+    - name: Install boot packages for Arch
       community.general.pacman:
         package:
           - linux
@@ -13,6 +13,7 @@
           - intel-ucode
           - linux-firmware
         state: present
+      when: ansible_facts['pkg_mgr'] == "pacman"
       tags: install, kernel, grub
 
     - name: Kernel cmdline

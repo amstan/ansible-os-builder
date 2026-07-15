@@ -26,7 +26,10 @@
     - name: Create main user
       ansible.builtin.user:
         user: '{{username}}'
-        groups: wheel, uucp, video
+        groups:
+          - "{{ (ansible_os_family == 'Debian') | ternary('sudo', 'wheel') }}"
+          - uucp
+          - video
       tags: user
 
     - name: Install authorized_key from builder
