@@ -77,6 +77,16 @@
         state: present
       tags: install
 
+    - name: Uninstall modemmanager
+      # This is a recommended package by network-manager, and we don't want to disable all recommends
+      ansible.builtin.apt:
+        package:
+          - modemmanager
+        state: absent
+        purge: true
+        autoremove: true
+      tags: install
+
     - name: Install aux tool packages
       ansible.builtin.apt:
         package:
