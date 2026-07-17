@@ -7,8 +7,6 @@
 
 chrootdir=$1; shift
 
-umount -Rlq $chrootdir # something has a tendency to leave these hanging
-
 if ! mountpoint -q "$chrootdir"; then
   # pacman expects a proper mount for /, even though we chroot
   mount -o bind "$chrootdir" "$chrootdir"
