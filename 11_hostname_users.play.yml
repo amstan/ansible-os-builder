@@ -27,7 +27,7 @@
       ansible.builtin.user:
         user: '{{username}}'
         groups:
-          - "{{ (ansible_os_family == 'Debian') | ternary('sudo', 'wheel') }}"
+          - "{{ (ansible_facts['os_family'] == 'Debian') | ternary('sudo', 'wheel') }}"
           - uucp
           - video
       tags: user
