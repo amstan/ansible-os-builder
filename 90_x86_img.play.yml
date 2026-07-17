@@ -147,10 +147,11 @@
 
     - name: Compress image
       ansible.builtin.shell:
-        chdir: '{{playbook_dir}}/build'
+        chdir: '{{ playbook_dir }}/build'
         cmd: |
-         tar --zstd -cf "{{ mnt_img }}.tar.zst" "{{ mnt_img }}"
+          zstd -f "{{ mnt_img }}" -o "{{ mnt_img }}.zst"
       tags: compress
+      # `zstd -d *.zst` to decompress it
 
 # After booting:
 #   resize rootfs partition to max
