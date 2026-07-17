@@ -52,11 +52,11 @@
         opts: -F 32 -n BOOT
         state: present
 
-    - name: Format rootfs filesystem
+    - name: Format fs filesystem
       community.general.filesystem:
         dev: '{{losetup.stdout}}p2'
         fstype: btrfs
-        opts: -L rootfs
+        opts: -L fs
         state: present
 
     - name: Create fs dir structure and mount everything in its proper spot
