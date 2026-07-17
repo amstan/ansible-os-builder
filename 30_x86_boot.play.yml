@@ -25,6 +25,11 @@
           - amd64-microcode
           - intel-microcode
           - firmware-linux
+          - firmware-misc-nonfree
+          - firmware-iwlwifi
+          - firmware-realtek
+          - firmware-atheros
+          - firmware-brcm80211
         state: present
       when: ansible_facts['pkg_mgr'] == "apt"
       tags: install, kernel, grub

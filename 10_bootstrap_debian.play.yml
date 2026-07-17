@@ -100,6 +100,8 @@
           - strace
           - rsync
           - bc
+          - pciutils
+          - iproute2
         state: present
       tags: install
     #
