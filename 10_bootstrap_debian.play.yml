@@ -17,7 +17,7 @@
       ansible.builtin.shell:
         chdir: '{{chroot_dir}}'
         cmd: |
-            debootstrap --components=main,contrib,non-free,non-free-firmware --include=python3,python-is-python3,sudo --variant=minbase sid {{chroot_dir}} http://deb.debian.org/debian/
+            debootstrap --components=main,contrib,non-free,non-free-firmware --include=python3,python-is-python3,sudo --variant=minbase sid {{chroot_dir}} https://mirror.csclub.uwaterloo.ca/debian/
         creates: '{{chroot_dir}}/etc/nsswitch.conf' # about the last thing, see later asserts
       tags: chroot_aquire
 
