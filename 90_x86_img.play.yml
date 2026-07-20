@@ -37,6 +37,7 @@
         label: 'gpt'
         number: 2
         fs_type: btrfs
+        part_type: '4f68bce3-e8cd-4db1-96e7-fbcaf984b709'  # Type=root (x86-64), so systemd-repart knows how to target it
         part_start: 1000MB
         state: present
 

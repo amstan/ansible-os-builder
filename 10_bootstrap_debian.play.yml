@@ -71,6 +71,7 @@
           - openssh-server
           - openssh-client
           - btrfs-progs
+          - systemd-repart
           - arch-install-scripts
           - python3-setuptools
           - python3-pip
@@ -151,3 +152,15 @@
         path: /etc/profile
         regexp: '^(\s*)PATH=.*games.*'
         replace: '\1PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games"'
+
+    - ansible.builtin.file:
+        path: /etc/repart.d
+        state: directory
+
+    - name: Tell systemd-repart to expand rootfs partition  # This probably works, TODO: do one last check
+      ansible.builtin.copy:
+        dest: /etc/repart.d/50-root.conf
+        content: |
+          [Partition]
+          Type=root
+          GrowFileSystem=yes
