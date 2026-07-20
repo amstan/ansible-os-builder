@@ -109,6 +109,8 @@
           - bc
           - pciutils
           - iproute2
+          - util-linux
+          - fdisk
         state: present
       tags: install
     #
