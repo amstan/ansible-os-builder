@@ -88,6 +88,12 @@
         autoremove: true
       tags: install
 
+    - name: Disable systemd-userdbd
+      # Useless service
+      ansible.builtin.systemd:
+        name: systemd-userdbd.socket
+        enabled: yes
+
     - name: Install aux tool packages
       ansible.builtin.apt:
         package:
